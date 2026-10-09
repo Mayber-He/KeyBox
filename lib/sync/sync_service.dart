@@ -32,6 +32,9 @@ class SyncService extends ChangeNotifier {
     store.addListener(_storeChanged);
   }
   final VaultStore store;
+  // Store notifications can run inside its reentrant mutex. Background work
+  // must enter from the service's original zone instead of borrowing that lock.
+  final Zone _zone = Zone.current;
   final SessionStorage storage;
   ApiClient? api;
   Timer? _timer;
@@ -54,7 +57,9 @@ class SyncService extends ChangeNotifier {
   void _schedule() {
     _timer?.cancel();
     if (connected && store.unlocked) {
-      _timer = Timer(const Duration(milliseconds: 500), quietSync);
+      _timer = _zone.run(
+        () => Timer(const Duration(milliseconds: 500), quietSync),
+      );
     }
   }
 
@@ -105,12 +110,12 @@ class SyncService extends ChangeNotifier {
     }
   }
 
-  Future<void> sync() {
+  Future<void> sync() => _zone.run(() {
     if (_running != null) return _running!;
     final future = _perform().whenComplete(() => _running = null);
     _running = future;
     return future;
-  }
+  });
 
   Future<Json> _snapshot() async =>
       Json.from(await api!.request('GET', '/vault') as Map);
@@ -282,7 +287,7 @@ class SyncService extends ChangeNotifier {
           ? '登录已失效，请重新连接'
           : '同步失败，本地修改已保留，可稍后重试';
       if (connected && store.unlocked) {
-        _timer = Timer(const Duration(seconds: 30), quietSync);
+        _timer = _zone.run(() => Timer(const Duration(seconds: 30), quietSync));
       }
       rethrow;
     } finally {
