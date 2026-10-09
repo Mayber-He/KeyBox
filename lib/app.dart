@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'ui.dart';
 import 'vault/vault_page.dart';
+import 'otp/otp_page.dart';
 
 class KeyBoxApp extends StatelessWidget {
   const KeyBoxApp({super.key});
@@ -151,7 +152,7 @@ class _HomePageState extends State<HomePage> {
             index: _index,
             children: const [
               VaultPage(),
-              _Placeholder(title: '验证码', subtitle: '多一层保护，多一份安心'),
+              OtpPage(),
               _Placeholder(title: '设置', subtitle: '让 KeyBox 更适合你'),
             ],
           ),
