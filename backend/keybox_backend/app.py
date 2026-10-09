@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
+from .auth import router as auth_router
 from .config import Settings
 from .db import create_database_engine, migrate
 
@@ -43,8 +45,13 @@ def create_app(settings=None):
         app.state.engine.dispose()
 
     app = FastAPI(title='KeyBox', lifespan=lifespan)
+    app.include_router(auth_router)
     app.state.settings = settings
     app.add_middleware(BodyLimit, limit=settings.max_body_bytes)
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, error):
+        return JSONResponse({'detail': {'code': 'invalid_request'}}, status_code=422)
 
     @app.get('/healthz')
     def health():
@@ -54,3 +61,4 @@ def create_app(settings=None):
 
 
 app = create_app()
+
