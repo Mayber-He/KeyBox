@@ -3,6 +3,7 @@ import '../ui.dart';
 import 'password_entry.dart';
 import 'password_detail.dart';
 import 'password_form.dart';
+import '../core/vault_store.dart';
 
 class VaultPage extends StatefulWidget {
   const VaultPage({super.key});
@@ -11,7 +12,10 @@ class VaultPage extends StatefulWidget {
 }
 
 class _VaultPageState extends State<VaultPage> {
-  final _entries = demoPasswords();
+  List<PasswordEntry> get _entries => VaultScope.of(context).records
+      .where((row) => row['kind'] == 'password')
+      .map(PasswordEntry.fromData)
+      .toList();
   final _search = TextEditingController();
   final _scroll = ScrollController();
   Future<PasswordEntry?> _edit([PasswordEntry? entry]) async {
@@ -20,14 +24,16 @@ class _VaultPageState extends State<VaultPage> {
       MaterialPageRoute(builder: (_) => PasswordFormPage(entry: entry)),
     );
     if (result == null || !mounted) return null;
-    setState(() {
-      if (entry == null) {
-        _entries.insert(0, result);
-      } else {
-        _entries[_entries.indexWhere((item) => item.id == entry.id)] = result;
-      }
-    });
-    message(context, entry == null ? '已添加演示条目' : '已保存修改');
+    try {
+      await VaultScope.read(
+        context,
+      ).save('password', result.toData(), id: result.id);
+      if (!mounted) return null;
+      message(context, entry == null ? '已添加条目' : '已保存修改');
+    } catch (_) {
+      if (mounted) message(context, '保存失败，请检查存储空间或重新解锁');
+      return null;
+    }
     return result;
   }
 
@@ -94,7 +100,7 @@ class _VaultPageState extends State<VaultPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${_entries.length} 个账号 · 仅用于演示',
+                          '${_entries.length} 个账号 · 本机加密保存',
                           style: const TextStyle(color: muted, fontSize: 12),
                         ),
                       ],
@@ -148,14 +154,8 @@ class _VaultPageState extends State<VaultPage> {
                         builder: (_) => PasswordDetailPage(
                           entry: entry,
                           onEdit: _edit,
-                          onDelete: () {
-                            setState(
-                              () => _entries.removeWhere(
-                                (item) => item.id == entry.id,
-                              ),
-                            );
-                            message(context, '已删除演示条目');
-                          },
+                          onDelete: () =>
+                              VaultScope.read(context).delete(entry.id),
                         ),
                       ),
                     ),

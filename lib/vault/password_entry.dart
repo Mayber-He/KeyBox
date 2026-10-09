@@ -13,6 +13,26 @@ class PasswordEntry {
   });
   final String id, name, username, password, website, notes, category;
   final Color color;
+
+  Map<String, dynamic> toData() => {
+    'name': name,
+    'username': username,
+    'password': password,
+    'website': website,
+    'notes': notes,
+    'category': category,
+    'color': color.toARGB32(),
+  };
+  factory PasswordEntry.fromData(Map<String, dynamic> data) => PasswordEntry(
+    id: data['id'] as String,
+    name: data['name'] as String,
+    username: data['username'] as String? ?? '',
+    password: data['password'] as String,
+    website: data['website'] as String? ?? '',
+    notes: data['notes'] as String? ?? '',
+    category: data['category'] as String? ?? '个人',
+    color: Color(data['color'] as int? ?? 0xFF2C806A),
+  );
 }
 
 List<PasswordEntry> demoPasswords() => [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../ui.dart';
 import 'password_entry.dart';
+import 'package:uuid/uuid.dart';
 
 class PasswordFormPage extends StatefulWidget {
   const PasswordFormPage({super.key, this.entry});
@@ -30,9 +31,7 @@ class _PasswordFormPageState extends State<PasswordFormPage> {
     Navigator.pop(
       context,
       PasswordEntry(
-        id:
-            widget.entry?.id ??
-            DateTime.now().microsecondsSinceEpoch.toString(),
+        id: widget.entry?.id ?? const Uuid().v4(),
         name: _name.text.trim(),
         username: _username.text.trim(),
         password: _password.text,
@@ -66,7 +65,7 @@ class _PasswordFormPageState extends State<PasswordFormPage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '仅用于页面演示，请填写虚构内容。',
+                  '内容将在本机加密保存。',
                   style: TextStyle(color: muted, fontSize: 13),
                 ),
                 const SizedBox(height: 28),
@@ -98,7 +97,7 @@ class _PasswordFormPageState extends State<PasswordFormPage> {
                   textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     labelText: '密码 *',
-                    hintText: '填写示例密码',
+                    hintText: '填写账号密码',
                     suffixIcon: IconButton(
                       tooltip: _hidden ? '显示密码' : '隐藏密码',
                       onPressed: () => setState(() => _hidden = !_hidden),

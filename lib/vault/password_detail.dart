@@ -11,7 +11,7 @@ class PasswordDetailPage extends StatefulWidget {
   });
   final PasswordEntry entry;
   final Future<PasswordEntry?> Function(PasswordEntry) onEdit;
-  final VoidCallback onDelete;
+  final Future<void> Function() onDelete;
   @override
   State<PasswordDetailPage> createState() => _PasswordDetailPageState();
 }
@@ -66,7 +66,6 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
                         ],
                       ),
                     ),
-                    const DemoBadge(),
                   ],
                 ),
                 const SizedBox(height: 32),
@@ -123,8 +122,12 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
                         !context.mounted) {
                       return;
                     }
-                    widget.onDelete();
-                    if (context.mounted) Navigator.pop(context);
+                    try {
+                      await widget.onDelete();
+                      if (context.mounted) Navigator.pop(context);
+                    } catch (_) {
+                      if (context.mounted) message(context, '删除失败，请重新解锁或检查存储');
+                    }
                   },
                   icon: const Icon(Icons.delete_outline_rounded),
                   label: const Text('删除条目'),
@@ -134,7 +137,7 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  '此账号为虚构示例，不可用于实际登录。',
+                  '内容已在本机加密保存。',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: muted, fontSize: 12),
                 ),

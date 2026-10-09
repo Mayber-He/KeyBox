@@ -92,7 +92,7 @@ void message(BuildContext context, String text) {
 
 Future<void> copyDemo(BuildContext context, String value) async {
   await Clipboard.setData(ClipboardData(text: value));
-  if (context.mounted) message(context, '已复制演示内容');
+  if (context.mounted) message(context, '已复制');
 }
 
 Future<bool> confirmDelete(BuildContext context, String name) async =>
@@ -100,7 +100,7 @@ Future<bool> confirmDelete(BuildContext context, String name) async =>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除条目？'),
-        content: Text('“$name”将从本次演示中移除。'),
+        content: Text('删除“$name”？连接云同步后也会同步此删除操作。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -140,7 +140,7 @@ class DemoBadge extends StatelessWidget {
       borderRadius: BorderRadius.circular(20),
     ),
     child: const Text(
-      '演示',
+      '加密',
       style: TextStyle(color: mint, fontSize: 11, fontWeight: FontWeight.w600),
     ),
   );
