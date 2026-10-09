@@ -16,6 +16,8 @@ Invalid, expired, or revoked credentials return HTTP 401 with `{detail:{code:"un
 
 Envelope fields: `{version:1,nonce:base64,ciphertext:base64,tag:base64}`. Base64 is canonical padded RFC4648. Nonce is 12 bytes; tag is 16 bytes; ciphertext is at most 1 MiB decoded. AES-256-GCM encryption, decryption, AAD generation, and key handling happen exclusively on the client. The server validates structure, never decrypts.
 
+Ciphertext must be nonempty. Metadata salt is exactly 16 bytes. All version/count fields must be JSON integers, and `deleted` must be a JSON boolean. Nested metadata and envelopes reject extra fields. Vault reads use a single SQLite snapshot for metadata and items.
+
 Metadata is exactly:
 
 ```json

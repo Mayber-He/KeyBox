@@ -5,6 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
 from .auth import router as auth_router
+from .vault import router as vault_router
 from .config import Settings
 from .db import create_database_engine, migrate
 
@@ -46,6 +47,7 @@ def create_app(settings=None):
 
     app = FastAPI(title='KeyBox', lifespan=lifespan)
     app.include_router(auth_router)
+    app.include_router(vault_router)
     app.state.settings = settings
     app.add_middleware(BodyLimit, limit=settings.max_body_bytes)
 
@@ -61,4 +63,5 @@ def create_app(settings=None):
 
 
 app = create_app()
+
 
