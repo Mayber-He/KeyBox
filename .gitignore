@@ -46,3 +46,14 @@ app.*.map.json
 
 # Local emulator verification artifacts
 /artifacts/
+
+# Python, local data and credentials
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.db
+*.db-shm
+*.db-wal
+.env
+*.keybox
