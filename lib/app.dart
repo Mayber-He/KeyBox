@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'ui.dart';
 import 'vault/vault_page.dart';
 import 'otp/otp_page.dart';
@@ -11,6 +12,9 @@ class KeyBoxApp extends StatelessWidget {
     title: 'KeyBox',
     debugShowCheckedModeBanner: false,
     theme: keyBoxTheme(),
+    locale: const Locale('zh', 'CN'),
+    supportedLocales: const [Locale('zh', 'CN')],
+    localizationsDelegates: GlobalMaterialLocalizations.delegates,
     home: const UnlockPage(),
   );
 }
