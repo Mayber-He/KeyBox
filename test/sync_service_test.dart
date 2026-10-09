@@ -115,6 +115,9 @@ Future<SyncService> device(FakeServer server) async {
   );
   await api.login('user', 'sync-password');
   final service = SyncService(store, api: api);
+  // These cases control offline/CAS barriers explicitly. Automatic scheduling
+  // is verified separately in sync_scheduling_test.dart.
+  store.onMutation = null;
   addTearDown(() async {
     service.dispose();
     store.lock();
