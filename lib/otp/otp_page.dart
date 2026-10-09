@@ -181,66 +181,97 @@ class _OtpPageState extends State<OtpPage> {
                             ],
                           ),
                           const SizedBox(height: 22),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      '${code.substring(0, 3)} ${code.substring(3)}',
-                                      style: const TextStyle(
-                                        fontFamily: 'monospace',
-                                        fontSize: 34,
-                                        color: mint,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 2,
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final digits = Semantics(
+                                label: '演示验证码 $code',
+                                excludeSemantics: true,
+                                child: Wrap(
+                                  spacing: 12,
+                                  children: [
+                                    for (final part in [
+                                      code.substring(0, 3),
+                                      code.substring(3),
+                                    ])
+                                      Text(
+                                        part,
+                                        style: const TextStyle(
+                                          fontFamily: 'monospace',
+                                          fontSize: 34,
+                                          color: mint,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                              final controls = Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Semantics(
+                                    label: '$remaining 秒后刷新演示码',
+                                    child: SizedBox(
+                                      width: 36,
+                                      height: 36,
+                                      child: Stack(
+                                        alignment: Alignment.center,
+                                        children: [
+                                          CircularProgressIndicator(
+                                            value: remaining / 30,
+                                            strokeWidth: 3,
+                                            backgroundColor: const Color(
+                                              0xFFE9F0EB,
+                                            ),
+                                            color: remaining <= 5
+                                                ? const Color(0xFFC5894E)
+                                                : mint,
+                                          ),
+                                          Text(
+                                            '$remaining',
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: muted,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Semantics(
-                                label: '$remaining 秒后刷新演示码',
-                                child: SizedBox(
-                                  width: 36,
-                                  height: 36,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      CircularProgressIndicator(
-                                        value: remaining / 30,
-                                        strokeWidth: 3,
-                                        backgroundColor: const Color(
-                                          0xFFE9F0EB,
-                                        ),
-                                        color: remaining <= 5
-                                            ? const Color(0xFFC5894E)
-                                            : mint,
-                                      ),
-                                      Text(
-                                        '$remaining',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: muted,
-                                        ),
-                                      ),
-                                    ],
+                                  IconButton(
+                                    tooltip: '复制验证码',
+                                    onPressed: () => copyDemo(context, code),
+                                    icon: const Icon(
+                                      Icons.copy_rounded,
+                                      color: muted,
+                                      size: 20,
+                                    ),
                                   ),
-                                ),
-                              ),
-                              IconButton(
-                                tooltip: '复制验证码',
-                                onPressed: () => copyDemo(context, code),
-                                icon: const Icon(
-                                  Icons.copy_rounded,
-                                  color: muted,
-                                  size: 20,
-                                ),
-                              ),
-                            ],
+                                ],
+                              );
+                              if (constraints.maxWidth < 300 ||
+                                  MediaQuery.textScalerOf(context).scale(34) >
+                                      41) {
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    digits,
+                                    const SizedBox(height: 10),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: controls,
+                                    ),
+                                  ],
+                                );
+                              }
+                              return Row(
+                                children: [
+                                  Expanded(child: digits),
+                                  const SizedBox(width: 12),
+                                  controls,
+                                ],
+                              );
+                            },
                           ),
                         ],
                       ),
