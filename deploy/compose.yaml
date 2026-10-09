@@ -1,0 +1,51 @@
+name: keybox
+services:
+  api:
+    build:
+      context: ../backend
+    restart: unless-stopped
+    environment:
+      KEYBOX_DATABASE_URL: sqlite:////data/keybox.db
+    volumes:
+      - keybox_data:/data
+    networks:
+      - private
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      KEYBOX_DOMAIN: ${KEYBOX_DOMAIN:?Set KEYBOX_DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - public
+      - private
+    depends_on:
+      api:
+        condition: service_healthy
+networks:
+  public:
+  private:
+    internal: true
+volumes:
+  keybox_data:
+  caddy_data:
+  caddy_config:
