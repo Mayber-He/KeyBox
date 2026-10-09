@@ -22,6 +22,8 @@ AAD 固定 UTF-8 文本：`keybox:v1:<vault_id>:<purpose>`，purpose 为 `passwo
 主密码不 trim；创建/修改时至少 12 字符，所有密码学参数在解密前严格限制。
 
 ## 验证记录
+目录整理后，Flutter 命令在 `mobile/` 中运行；后端命令在仓库根目录运行。客户端原生工程、源码、依赖锁文件和测试整体迁移，内部相对路径保持一致。
+
 2026-10-09：
 
 - 后端 `pytest backend/tests -q`：43 项通过。覆盖认证、令牌过期/撤销/轮换/重放、限流、授权、版本冲突、幂等、删除传播、备份与恢复。
@@ -34,3 +36,13 @@ AAD 固定 UTF-8 文本：`keybox:v1:<vault_id>:<purpose>`，purpose 为 `passwo
 - 最终 Android debug APK 已通过普通 `main.dart` 入口重新构建、安装并启动，版本 `0.2.0+2`；未将集成测试 APK 作为交付物。SHA-256：`443906a7d9a8947e88ac9baf4936c421ac8143ee14915b2fbf36ead726017763`。
 
 Android 真机相机扫码、真机安全存储/后台锁定/换机恢复，iOS/macOS/Xcode，以及 Linux Docker/Compose/Caddy 运行、证书申请和公网入口验证仍待完成。APK 构建与模拟器通过不能替代真机验收。实际阿里云部署等待本地验收和服务器连接信息，不上传真实数据。
+
+## 目录整理验收
+
+2026-10-09：客户端整体归入 `mobile/`，后端、部署和文档分别保留在 `backend/`、`deploy/` 和 `docs/`。99 个原有工程文件仅移动位置，内容一致；补齐客户端忽略规则并更新运行说明。
+
+- 从 `mobile/` 重新执行依赖安装、静态分析及客户端测试：分析无问题，18 项通过，未启用的真实 HTTP 测试跳过。
+- 从仓库根目录执行后端测试：43 项通过。
+- 从 `mobile/` 构建 Android debug APK 成功，产物路径为 `mobile/build/app/outputs/flutter-apk/app-debug.apk`。本地 Kotlin 跨盘增量缓存警告触发回退编译，未影响构建结果。
+- 新 APK 已在 Android 模拟器安装并冷启动成功；SHA-256：`1a9aa6b72709d1e77c19c9f4e16cc73748fd07d3cab0d58693ba43b8525a6bad`。
+- 本次目录整理未重新执行完整模拟器集成、真实 HTTP 双客户端联调或真机验收；上文记录为此前功能阶段的验收结果。

@@ -4,6 +4,20 @@
 
 首次启动从空密码箱开始，设置至少 12 字符的主密码，并确认保存随机恢复密钥。主密码用于本机解密；云同步使用独立账号密码，两者可以分别修改。主密码与恢复密钥均丢失时，已有密文无法恢复。
 
+## 目录结构
+
+```text
+KeyBox/
+├── mobile/    # Flutter 客户端：Android/iOS、页面、测试及依赖
+├── backend/   # FastAPI 服务、数据库迁移及后端测试
+├── deploy/    # Docker Compose 与 Caddy 配置
+├── docs/      # 接口契约、部署说明及验收记录
+├── artifacts/ # 本地验证产物，不提交 Git
+└── README.md
+```
+
+Flutter 命令在 `mobile/` 中执行；后端和部署命令在仓库根目录执行。Android Studio 或其他 Flutter IDE 打开 `mobile/`。客户端内部按 `core`、`vault`、`otp`、`security`、`sync`、`backup` 和 `settings` 组织代码。
+
 ## 已实现
 
 - 密码条目搜索、详情、密码显隐、复制、增删改，SQLite 加密持久化；进程重启和进入后台后锁定。
@@ -18,9 +32,10 @@
 
 ## Android 客户端
 
-本次环境为 Flutter 3.41.9、Dart 3.11.5、Android SDK 和 JDK。安装后从仓库根目录运行：
+本次环境为 Flutter 3.41.9、Dart 3.11.5、Android SDK 和 JDK。安装后从仓库根目录进入客户端运行：
 
 ```sh
+cd mobile
 flutter doctor
 flutter pub get
 flutter devices
@@ -37,13 +52,13 @@ flutter build apk --debug
 adb install -r build/app/outputs/flutter-apk/app-debug.apk
 ```
 
-文件名 `demo_flow_test.dart` 沿用原工程；内容现为真实加密流程，全部使用虚构测试数据。APK 使用调试签名。iOS 需要后续 macOS/Xcode、签名与运行验证，工程已加入相机用途说明与 Keychain entitlement。
+以上命令均在 `mobile/` 中执行，APK 位于 `mobile/build/app/outputs/flutter-apk/app-debug.apk`。文件名 `demo_flow_test.dart` 沿用原工程；内容现为真实加密流程，全部使用虚构测试数据。APK 使用调试签名。iOS 需要后续 macOS/Xcode、签名与运行验证，工程已加入相机用途说明与 Keychain entitlement。
 
 选择备份文件可能触发系统文件界面并让 App 锁定；返回后先重新解锁，再输入备份密码完成导入。导出前先生成完整密文文件，系统保存界面不会收到条目明文。备份文件与恢复密钥需要分别保管。
 
 ## 后端本地运行
 
-使用 Python 3.12，在仓库根目录建立虚拟环境并安装锁定依赖：
+使用 Python 3.12，在仓库根目录另开终端，建立虚拟环境并安装锁定依赖：
 
 ```sh
 python -m venv .venv
@@ -69,7 +84,7 @@ Linux 使用 `.venv/bin/python`。CLI 隐藏输入并确认独立同步密码，
 
 ## 真实 HTTP 双客户端测试
 
-`test/sync_live_test.dart` 需显式启用，平常测试会跳过。它使用两个独立本地数据库、真实 HTTP 和虚构账号；准备一个全新的测试服务器数据库，不能指向个人正式服务器。
+`mobile/test/sync_live_test.dart` 需显式启用，平常测试会跳过。它使用两个独立本地数据库、真实 HTTP 和虚构账号；准备一个全新的测试服务器数据库，不能指向个人正式服务器。
 
 在单独的 PowerShell 终端设置数据库并创建测试账号；密码输入测试文件中的 `fictional-sync-password-2026`：
 
@@ -79,9 +94,10 @@ $env:KEYBOX_DATABASE_URL = 'sqlite:///./artifacts/live-fresh.db'
 .venv/Scripts/python.exe -m uvicorn keybox_backend.app:app --host 127.0.0.1 --port 18765 --workers 1 --no-access-log
 ```
 
-先建立 `artifacts` 目录，每次选择新的数据库路径。另一个终端执行：
+先在仓库根目录建立 `artifacts` 目录，每次选择新的数据库路径。另一个终端从仓库根目录执行：
 
 ```sh
+cd mobile
 flutter test --no-pub test/sync_live_test.dart --dart-define=KEYBOX_TEST_SERVER=http://127.0.0.1:18765 --reporter expanded
 ```
 
