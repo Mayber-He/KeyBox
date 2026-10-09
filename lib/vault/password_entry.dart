@@ -15,7 +15,7 @@ class PasswordEntry {
   final Color color;
 }
 
-List<PasswordEntry> demoPasswords() => const [
+List<PasswordEntry> demoPasswords() => [
   PasswordEntry(
     id: 'gmail',
     name: 'Gmail',

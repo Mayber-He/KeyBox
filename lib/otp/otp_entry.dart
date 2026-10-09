@@ -18,7 +18,7 @@ class OtpEntry {
   }
 }
 
-List<OtpEntry> demoTokens() => const [
+List<OtpEntry> demoTokens() => [
   OtpEntry(
     id: 'github',
     name: 'GitHub',
