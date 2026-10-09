@@ -6,10 +6,12 @@ import 'ui.dart';
 import 'vault/vault_page.dart';
 import 'otp/otp_page.dart';
 import 'settings/settings_page.dart';
+import 'sync/sync_service.dart';
 
 class KeyBoxApp extends StatefulWidget {
-  const KeyBoxApp({super.key, required this.store});
+  const KeyBoxApp({super.key, required this.store, this.sync});
   final VaultStore store;
+  final SyncService? sync;
   @override
   State<KeyBoxApp> createState() => _KeyBoxAppState();
 }
@@ -29,11 +31,15 @@ class _KeyBoxAppState extends State<KeyBoxApp> with WidgetsBindingObserver {
     if (_wasUnlocked && !widget.store.unlocked) {
       _navigator.currentState?.popUntil((route) => route.isFirst);
     }
+    if (!_wasUnlocked && widget.store.unlocked) widget.sync?.quietSync();
     _wasUnlocked = widget.store.unlocked;
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.store.unlocked) {
+      widget.sync?.quietSync();
+    }
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
@@ -68,7 +74,9 @@ class _KeyBoxAppState extends State<KeyBoxApp> with WidgetsBindingObserver {
         ),
       ),
     );
-    return app;
+    return widget.sync == null
+        ? app
+        : SyncScope(service: widget.sync!, child: app);
   }
 }
 

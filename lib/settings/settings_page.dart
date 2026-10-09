@@ -1,13 +1,43 @@
 import 'package:flutter/material.dart';
 import '../ui.dart';
+import 'sync_form.dart';
 import '../core/vault_store.dart';
 import '../security/setup_page.dart';
+import '../sync/sync_service.dart';
+import '../sync/conflicts_page.dart';
+import '../sync/devices_page.dart';
+import '../sync/merge_page.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
+  Future<void> _sync(BuildContext context) async {
+    final service = SyncScope.maybeOf(context);
+    if (service == null) return;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => SyncFormPage(service: service)),
+    );
+  }
+
+  Future<void> _refresh(BuildContext context, SyncService service) async {
+    try {
+      await service.sync();
+    } on RemoteVaultRequired {
+      if (context.mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute<void>(builder: (_) => MergePage(service: service)),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) message(context, service.status);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final sync = SyncScope.maybeOf(context);
     return ListView(
       key: const PageStorageKey('settings'),
       padding: const EdgeInsets.only(bottom: 24),
@@ -88,6 +118,54 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
           ),
+        ]),
+        _section('云同步', [
+          _item(
+            Icons.cloud_outlined,
+            '连接自己的服务器',
+            sync?.status ?? '未连接',
+            () => _sync(context),
+          ),
+          _item(Icons.sync_rounded, '立即同步', sync?.status ?? '配置服务器后可同步', () {
+            if (sync?.connected == true) {
+              _refresh(context, sync!);
+            } else {
+              _sync(context);
+            }
+          }),
+          if (sync != null &&
+              (sync.conflicts.isNotEmpty || sync.metadataConflict != null))
+            _item(
+              Icons.compare_arrows,
+              '处理同步冲突',
+              '逐项选择保留的版本',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => ConflictsPage(service: sync),
+                ),
+              ),
+            ),
+          if (sync?.connected == true) ...[
+            _item(
+              Icons.devices,
+              '登录设备',
+              '查看与撤销设备会话',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => DevicesPage(service: sync!),
+                ),
+              ),
+            ),
+            _item(Icons.logout, '退出同步账号', '保留本地密码箱', () async {
+              try {
+                await sync!.disconnect();
+              } catch (_) {
+                if (context.mounted) message(context, '本地已退出，请检查云端设备会话');
+              }
+            }),
+          ],
         ]),
         _section('关于', [
           _item(
