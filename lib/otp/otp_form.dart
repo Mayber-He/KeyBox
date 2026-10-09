@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../ui.dart';
 import 'otp_entry.dart';
+import 'totp.dart';
+import 'scanner_page.dart';
+import '../core/crypto_box.dart';
+import 'package:uuid/uuid.dart';
 
 class OtpFormPage extends StatefulWidget {
   const OtpFormPage({super.key, this.entry});
@@ -14,9 +18,14 @@ class _OtpFormPageState extends State<OtpFormPage> {
   late final _name = TextEditingController(text: widget.entry?.name);
   late final _account = TextEditingController(text: widget.entry?.account);
   late final _secret = TextEditingController(text: widget.entry?.secret);
+  late String _algorithm = widget.entry?.algorithm ?? 'SHA1';
+  late int _digits = widget.entry?.digits ?? 6;
+  late final _period = TextEditingController(
+    text: '${widget.entry?.period ?? 30}',
+  );
   @override
   void dispose() {
-    for (final controller in [_name, _account, _secret]) {
+    for (final controller in [_name, _account, _secret, _period]) {
       controller.dispose();
     }
     super.dispose();
@@ -27,12 +36,13 @@ class _OtpFormPageState extends State<OtpFormPage> {
     Navigator.pop(
       context,
       OtpEntry(
-        id:
-            widget.entry?.id ??
-            DateTime.now().microsecondsSinceEpoch.toString(),
+        id: widget.entry?.id ?? const Uuid().v4(),
         name: _name.text.trim(),
         account: _account.text.trim(),
-        secret: _secret.text.trim(),
+        secret: normalizeSecret(_secret.text),
+        algorithm: _algorithm,
+        digits: _digits,
+        period: int.parse(_period.text),
         color: widget.entry?.color ?? mint,
       ),
     );
@@ -60,12 +70,26 @@ class _OtpFormPageState extends State<OtpFormPage> {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  '请使用演示密钥。验证码为预设示例，不可用于登录。',
+                  '密钥将在本机加密保存，验证码离线计算。请保持设备时间准确。',
                   style: TextStyle(color: muted, fontSize: 13),
                 ),
                 const SizedBox(height: 24),
                 OutlinedButton.icon(
-                  onPressed: () => message(context, '扫码功能尚未接入'),
+                  onPressed: () async {
+                    final result = await Navigator.push<Json>(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ScannerPage()),
+                    );
+                    if (result == null || !mounted) return;
+                    setState(() {
+                      _name.text = result['name'] as String;
+                      _account.text = result['account'] as String;
+                      _secret.text = result['secret'] as String;
+                      _algorithm = result['algorithm'] as String;
+                      _digits = result['digits'] as int;
+                      _period.text = '${result['period']}';
+                    });
+                  },
                   icon: const Icon(Icons.qr_code_scanner_rounded),
                   label: const Text('扫描二维码'),
                 ),
@@ -97,11 +121,51 @@ class _OtpFormPageState extends State<OtpFormPage> {
                   autocorrect: false,
                   enableSuggestions: false,
                   decoration: const InputDecoration(
-                    labelText: '演示密钥 *',
-                    hintText: 'DEMO_SECRET_ONLY',
+                    labelText: '密钥 *',
+                    hintText: 'Base32 密钥',
                   ),
+                  obscureText: true,
+                  validator: (v) {
+                    try {
+                      normalizeSecret(v ?? '');
+                      return null;
+                    } catch (_) {
+                      return '请填写有效的 Base32 密钥';
+                    }
+                  },
+                ),
+                const SizedBox(height: 18),
+                DropdownButtonFormField<String>(
+                  key: ValueKey(_algorithm),
+                  initialValue: _algorithm,
+                  decoration: const InputDecoration(labelText: '算法'),
+                  items: ['SHA1', 'SHA256', 'SHA512']
+                      .map((v) => DropdownMenuItem(value: v, child: Text(v)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _algorithm = v!),
+                ),
+                const SizedBox(height: 18),
+                DropdownButtonFormField<int>(
+                  key: ValueKey(_digits),
+                  initialValue: _digits,
+                  decoration: const InputDecoration(labelText: '位数'),
+                  items: [6, 8]
+                      .map(
+                        (v) => DropdownMenuItem(value: v, child: Text('$v 位')),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _digits = v!),
+                ),
+                const SizedBox(height: 18),
+                TextFormField(
+                  controller: _period,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: '刷新周期（秒）'),
                   validator: (v) =>
-                      v == null || v.trim().isEmpty ? '请填写演示密钥' : null,
+                      (int.tryParse(v ?? '') ?? 0) < 1 ||
+                          (int.tryParse(v ?? '') ?? 0) > 300
+                      ? '周期需为 1 到 300 秒'
+                      : null,
                 ),
                 const SizedBox(height: 28),
                 FilledButton(onPressed: _save, child: const Text('保存条目')),

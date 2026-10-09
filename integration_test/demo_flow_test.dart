@@ -51,6 +51,13 @@ void main() {
     expect(tester.takeException(), isNull);
   }
 
+  Future<VaultStore> fixture() async {
+    final db = await openDatabase(inMemoryDatabasePath);
+    final store = await VaultStore.open(db);
+    await store.initialize(await store.crypto.create('test-master-password'));
+    return store;
+  }
+
   testWidgets('真实设置、加密保存、详情复制、后台锁定与重新解锁', (tester) async {
     final db = await openDatabase(inMemoryDatabasePath);
     final store = await VaultStore.open(db);
@@ -120,5 +127,43 @@ void main() {
     await tap(tester, find.text('删除').last);
     await waitFor(tester, find.byTooltip('添加密码'));
     expect(store.records, isEmpty);
+  });
+  testWidgets('320dp 双倍字体、真实验证码表单与搜索标签状态', (tester) async {
+    final store = await fixture();
+    addTearDown(() async {
+      store.lock();
+      await store.db.close();
+    });
+    await binding.setSurfaceSize(const Size(320, 740));
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(() async {
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+      await binding.setSurfaceSize(null);
+    });
+    await store.save('otp', {
+      'name': 'GitHub',
+      'account': 'test@example.com',
+      'secret': 'JBSWY3DPEHPK3PXP',
+      'digits': 8,
+      'algorithm': 'SHA256',
+      'period': 30,
+    });
+    await tester.pumpWidget(KeyBoxApp(store: store));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, 'no-result');
+    await tap(tester, find.text('验证码').last);
+    expect(find.text('GitHub'), findsOneWidget);
+    await tap(tester, find.text('GitHub'));
+    await tap(tester, find.text('保存条目'));
+    await waitFor(tester, find.text('GitHub'));
+    expect(find.text('编辑验证码'), findsNothing);
+    await tap(tester, find.byTooltip('复制验证码'));
+    expect(
+      (await Clipboard.getData(Clipboard.kTextPlain))?.text,
+      matches(RegExp(r'^\d{8}$')),
+    );
+    await tap(tester, find.text('密码箱').last);
+    expect(find.text('no-result'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
