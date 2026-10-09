@@ -7,6 +7,7 @@ import 'vault/vault_page.dart';
 import 'otp/otp_page.dart';
 import 'settings/settings_page.dart';
 import 'sync/sync_service.dart';
+import 'backup/backup_page.dart';
 
 class KeyBoxApp extends StatefulWidget {
   const KeyBoxApp({super.key, required this.store, this.sync});
@@ -19,6 +20,7 @@ class KeyBoxApp extends StatefulWidget {
 class _KeyBoxAppState extends State<KeyBoxApp> with WidgetsBindingObserver {
   final _navigator = GlobalKey<NavigatorState>();
   bool _wasUnlocked = false;
+  bool _openingBackup = false;
   @override
   void initState() {
     super.initState();
@@ -33,6 +35,26 @@ class _KeyBoxAppState extends State<KeyBoxApp> with WidgetsBindingObserver {
     }
     if (!_wasUnlocked && widget.store.unlocked) widget.sync?.quietSync();
     _wasUnlocked = widget.store.unlocked;
+    if (widget.store.unlocked &&
+        widget.store.pendingBackup != null &&
+        !_openingBackup) {
+      _openingBackup = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !widget.store.unlocked) {
+          _openingBackup = false;
+          return;
+        }
+        final bytes = widget.store.pendingBackup!;
+        widget.store.pendingBackup = null;
+        _navigator.currentState!
+            .push(
+              MaterialPageRoute<void>(
+                builder: (_) => BackupPage(importFile: bytes),
+              ),
+            )
+            .whenComplete(() => _openingBackup = false);
+      });
+    }
   }
 
   @override

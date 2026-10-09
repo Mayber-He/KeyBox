@@ -5,6 +5,8 @@ import 'package:integration_test/integration_test.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:keybox/app.dart';
 import 'package:keybox/core/vault_store.dart';
+import 'package:keybox/sync/api_client.dart';
+import 'package:keybox/backup/backup_codec.dart';
 
 void main() {
   final binding = IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -164,6 +166,33 @@ void main() {
     );
     await tap(tester, find.text('密码箱').last);
     expect(find.text('no-result'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+  testWidgets('Android 安全存储与加密备份恢复', (tester) async {
+    final storage = SecureSessionStorage();
+    await storage.write('{"refresh_token":"fictional-test-token"}');
+    expect(await storage.read(), contains('fictional-test-token'));
+    await storage.write(null);
+    expect(await storage.read(), isNull);
+    final store = await fixture();
+    addTearDown(() async {
+      store.lock();
+      await store.db.close();
+    });
+    await store.save('password', {
+      'name': 'RestoreTest',
+      'password': 'fictional-backup-password',
+    });
+    final codec = BackupCodec(store);
+    final encrypted = await codec.export('fictional-export-password');
+    store.lock();
+    await store.unlock('test-master-password');
+    expect(await codec.import(encrypted, 'fictional-export-password'), 1);
+    expect(store.records, hasLength(2));
+    expect(store.records.map((item) => item['id']).toSet(), hasLength(2));
+    await tester.pumpWidget(KeyBoxApp(store: store));
+    await tester.pumpAndSettle();
+    expect(find.text('RestoreTest'), findsNWidgets(2));
     expect(tester.takeException(), isNull);
   });
 }

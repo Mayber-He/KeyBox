@@ -6,6 +6,7 @@ import '../security/setup_page.dart';
 import '../sync/sync_service.dart';
 import '../sync/conflicts_page.dart';
 import '../sync/devices_page.dart';
+import '../backup/backup_page.dart';
 import '../sync/merge_page.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -166,6 +167,25 @@ class SettingsPage extends StatelessWidget {
               }
             }),
           ],
+        ]),
+        _section('备份', [
+          _item(
+            Icons.upload_file_outlined,
+            '导出加密备份',
+            '使用独立备份密码保护文件',
+            () => Navigator.push(
+              context,
+              MaterialPageRoute<void>(builder: (_) => const BackupPage()),
+            ),
+          ),
+          _item(Icons.download_outlined, '导入备份', '解密验证后合并，不清空现有数据', () async {
+            final store = VaultScope.read(context);
+            try {
+              await selectBackup(store);
+            } catch (_) {
+              if (context.mounted) message(context, '备份文件无法读取或文件过大');
+            }
+          }),
         ]),
         _section('关于', [
           _item(
