@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'ui.dart';
+import 'vault/vault_page.dart';
 
 class KeyBoxApp extends StatelessWidget {
   const KeyBoxApp({super.key});
@@ -149,7 +150,7 @@ class _HomePageState extends State<HomePage> {
           child: IndexedStack(
             index: _index,
             children: const [
-              _Placeholder(title: '密码箱', subtitle: '把重要的账号，安放在这里'),
+              VaultPage(),
               _Placeholder(title: '验证码', subtitle: '多一层保护，多一份安心'),
               _Placeholder(title: '设置', subtitle: '让 KeyBox 更适合你'),
             ],
