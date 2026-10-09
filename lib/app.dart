@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'ui.dart';
 import 'vault/vault_page.dart';
 import 'otp/otp_page.dart';
+import 'settings/settings_page.dart';
 
 class KeyBoxApp extends StatelessWidget {
   const KeyBoxApp({super.key});
@@ -150,11 +151,7 @@ class _HomePageState extends State<HomePage> {
           constraints: const BoxConstraints(maxWidth: 640),
           child: IndexedStack(
             index: _index,
-            children: const [
-              VaultPage(),
-              OtpPage(),
-              _Placeholder(title: '设置', subtitle: '让 KeyBox 更适合你'),
-            ],
+            children: const [VaultPage(), OtpPage(), SettingsPage()],
           ),
         ),
       ),
@@ -176,14 +173,5 @@ class _HomePageState extends State<HomePage> {
         NavigationDestination(icon: Icon(Icons.tune_rounded), label: '设置'),
       ],
     ),
-  );
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.title, required this.subtitle});
-  final String title, subtitle;
-  @override
-  Widget build(BuildContext context) => ListView(
-    children: [PageHeader(title: title, subtitle: subtitle)],
   );
 }
