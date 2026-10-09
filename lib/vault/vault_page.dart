@@ -51,6 +51,9 @@ class _VaultPageState extends State<VaultPage> {
         .toList();
     return CustomScrollView(
       controller: _scroll,
+      scrollBehavior: ScrollConfiguration.of(
+        context,
+      ).copyWith(overscroll: false),
       key: const PageStorageKey('vault'),
       slivers: [
         SliverToBoxAdapter(
