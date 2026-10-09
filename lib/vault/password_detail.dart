@@ -3,25 +3,40 @@ import '../ui.dart';
 import 'password_entry.dart';
 
 class PasswordDetailPage extends StatefulWidget {
-  const PasswordDetailPage({super.key, required this.entry});
+  const PasswordDetailPage({
+    super.key,
+    required this.entry,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final PasswordEntry entry;
+  final Future<PasswordEntry?> Function(PasswordEntry) onEdit;
+  final VoidCallback onDelete;
   @override
   State<PasswordDetailPage> createState() => _PasswordDetailPageState();
 }
 
 class _PasswordDetailPageState extends State<PasswordDetailPage> {
   bool _visible = false;
+  late PasswordEntry _entry = widget.entry;
+  Future<void> _edit() async {
+    final updated = await widget.onEdit(_entry);
+    if (updated != null && mounted) {
+      setState(() {
+        _entry = updated;
+        _visible = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final entry = widget.entry;
+    final entry = _entry;
     return Scaffold(
       appBar: AppBar(
         title: const Text('账号详情'),
         actions: [
-          TextButton(
-            onPressed: () => message(context, '编辑密码页面正在准备中'),
-            child: const Text('编辑'),
-          ),
+          TextButton(onPressed: _edit, child: const Text('编辑')),
           const SizedBox(width: 12),
         ],
       ),
@@ -101,6 +116,22 @@ class _PasswordDetailPageState extends State<PasswordDetailPage> {
                         ),
                 ),
                 _field('备注', entry.notes.isEmpty ? '暂无备注' : entry.notes, null),
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    if (!await confirmDelete(context, entry.name) ||
+                        !context.mounted) {
+                      return;
+                    }
+                    widget.onDelete();
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: const Text('删除条目'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFB75252),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 const Text(
                   '此账号为虚构示例，不可用于实际登录。',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../ui.dart';
 import 'password_entry.dart';
 import 'password_detail.dart';
+import 'password_form.dart';
 
 class VaultPage extends StatefulWidget {
   const VaultPage({super.key});
@@ -13,6 +14,23 @@ class _VaultPageState extends State<VaultPage> {
   final _entries = demoPasswords();
   final _search = TextEditingController();
   final _scroll = ScrollController();
+  Future<PasswordEntry?> _edit([PasswordEntry? entry]) async {
+    final result = await Navigator.push<PasswordEntry>(
+      context,
+      MaterialPageRoute(builder: (_) => PasswordFormPage(entry: entry)),
+    );
+    if (result == null || !mounted) return null;
+    setState(() {
+      if (entry == null) {
+        _entries.insert(0, result);
+      } else {
+        _entries[_entries.indexWhere((item) => item.id == entry.id)] = result;
+      }
+    });
+    message(context, entry == null ? '已添加演示条目' : '已保存修改');
+    return result;
+  }
+
   @override
   void dispose() {
     _search.dispose();
@@ -40,7 +58,7 @@ class _VaultPageState extends State<VaultPage> {
             title: '密码箱',
             subtitle: '把重要的账号，安放在这里',
             action: IconButton.filled(
-              onPressed: () => message(context, '新增密码页面正在准备中'),
+              onPressed: () => _edit(),
               tooltip: '添加密码',
               icon: const Icon(Icons.add_rounded),
             ),
@@ -124,7 +142,18 @@ class _VaultPageState extends State<VaultPage> {
                     onTap: () => Navigator.push<void>(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => PasswordDetailPage(entry: entry),
+                        builder: (_) => PasswordDetailPage(
+                          entry: entry,
+                          onEdit: _edit,
+                          onDelete: () {
+                            setState(
+                              () => _entries.removeWhere(
+                                (item) => item.id == entry.id,
+                              ),
+                            );
+                            message(context, '已删除演示条目');
+                          },
+                        ),
                       ),
                     ),
                     child: Padding(
