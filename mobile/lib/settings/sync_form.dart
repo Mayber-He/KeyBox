@@ -117,7 +117,7 @@ class _SyncFormPageState extends State<SyncFormPage> {
                       keyboardType: TextInputType.url,
                       decoration: const InputDecoration(
                         labelText: '服务器地址',
-                        hintText: 'https://你的域名',
+                        hintText: 'https://maybing.top/keybox/api/',
                       ),
                       validator: (v) {
                         final uri = Uri.tryParse(v?.trim() ?? '');
@@ -126,9 +126,8 @@ class _SyncFormPageState extends State<SyncFormPage> {
                                 uri.host.isEmpty ||
                                 uri.userInfo.isNotEmpty ||
                                 uri.hasQuery ||
-                                uri.hasFragment ||
-                                (uri.path.isNotEmpty && uri.path != '/')
-                            ? '请填写完整 HTTPS 地址，不含路径或参数'
+                                uri.hasFragment
+                            ? '请填写完整 HTTPS 地址，不含账号或参数'
                             : null;
                       },
                     ),

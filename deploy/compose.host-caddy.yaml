@@ -1,0 +1,14 @@
+services:
+  api:
+    image: keybox/api:56f3615
+    networks:
+      private:
+        ipv4_address: 172.30.0.10
+    command: ["python", "-m", "uvicorn", "keybox_backend.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--no-access-log", "--proxy-headers", "--forwarded-allow-ips", "*", "--root-path", "/keybox/api"]
+  caddy:
+    profiles: ["bundled-proxy"]
+networks:
+  private:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

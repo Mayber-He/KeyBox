@@ -42,7 +42,7 @@ flutter devices
 flutter run -d <device-id>
 ```
 
-在设置中连接 `https://你的域名`，填写服务器 CLI 创建的同步账号与密码。客户端正常入口只接受 HTTPS 根地址。验证码依赖手机时间，请保持系统时间准确。指纹解锁、系统自动填充和公开注册尚未实现。
+在设置中连接 `https://你的域名` 或带子路径的 HTTPS 地址（本次部署为 `https://maybing.top/keybox/api/`），填写服务器创建的同步账号与密码。客户端正常入口只接受 HTTPS，不能包含账号、查询参数或片段。验证码依赖手机时间，请保持系统时间准确。指纹解锁、系统自动填充和公开注册尚未实现。
 
 ```sh
 flutter analyze
@@ -107,6 +107,8 @@ flutter test --no-pub test/sync_live_test.dart --dart-define=KEYBOX_TEST_SERVER=
 
 2026-10-09 已完成后端 43 项测试、客户端 18 项测试、真实 HTTP 双客户端联调 1 项、Android 模拟器集成 3 项及 Flutter 静态分析。模拟器检查包括真实解锁、加密保存、复制、删除、后台锁定、320dp 双倍字体、平台安全存储和备份恢复；保留上下边界滚动比例回归检查。TOTP 使用 [RFC 6238 附录 B](https://www.rfc-editor.org/info/rfc6238/) 的全部算法/时间测试向量。
 
-尚未完成 Android 真机相机扫码、真机安全存储/后台行为/换机恢复、iOS 运行，以及 Linux Docker/Compose/Caddy HTTPS 实际运行验收。尚未部署阿里云，也未导入真实个人数据。完成这些上线检查后再导入真实条目。
+2026-10-10 已在腾讯云 Ubuntu 上部署 `https://maybing.top/keybox/api/`，通过 Linux 容器内后端 43 项测试、HTTPS 登录/刷新/注销、空密码箱读取，以及独立数据库备份恢复验证。支持子路径的客户端 19 项测试和静态分析通过，已重新构建调试 APK。
+
+尚未完成 Android 真机相机扫码、真机安全存储/后台行为/换机恢复及 iOS 运行，也未导入真实个人数据。完成这些上线检查后再导入真实条目。
 
 开发分支为 `codex/keybox-backend`，每个功能阶段检查通过后采用 Conventional Commits 单独提交并推送。

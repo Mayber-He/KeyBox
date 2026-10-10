@@ -54,9 +54,8 @@ class ApiClient {
             !(allowLocalHttp &&
                 !kReleaseMode &&
                 base.scheme == 'http' &&
-                ['127.0.0.1', 'localhost', '10.0.2.2'].contains(base.host))) ||
-        (base.path.isNotEmpty && base.path != '/')) {
-      throw const FormatException('请使用完整的 HTTPS 服务器地址（不含路径、账号或参数）');
+                ['127.0.0.1', 'localhost', '10.0.2.2'].contains(base.host)))) {
+      throw const FormatException('请使用完整的 HTTPS 服务器地址（不含账号或参数）');
     }
   }
   final Uri base;
@@ -82,8 +81,11 @@ class ApiClient {
     Json? body,
     String? access,
   }) async {
-    final request = http.Request(method, base.resolve('/api/v1$path'))
-      ..followRedirects = false;
+    final prefix = base.path.endsWith('/') ? base.path : '${base.path}/';
+    final request = http.Request(
+      method,
+      base.replace(path: '${prefix}api/v1$path'),
+    )..followRedirects = false;
     request.headers['Content-Type'] = 'application/json';
     if (access != null) request.headers['Authorization'] = 'Bearer $access';
     if (body != null) request.body = jsonEncode(body);

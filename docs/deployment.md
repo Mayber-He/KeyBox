@@ -1,8 +1,35 @@
 # Deploying KeyBox
 
-The supplied container configuration serves one personal account using Python 3.12, FastAPI, SQLite, and Caddy TLS. Docker is not installed in the development environment, so the Docker image, Compose runtime, and certificate issuance have not been exercised here. The backend tests verify application behavior and SQLite backup/restore independently.
+The supplied container configuration serves one personal account using Python 3.12, FastAPI, SQLite, and Caddy TLS. On 2026-10-10, the host-Caddy deployment below was verified on Ubuntu with Docker: 43 backend tests passed, HTTPS authentication/refresh/logout worked, and a database backup restored into an independent copy with working authentication and revoked sessions. Android physical-device and iOS acceptance remain pending.
 
-## Initial deployment
+## maybing.top deployment with host Caddy
+
+The client base URL is `https://maybing.top/keybox/api/`. Caddy strips `/keybox/api` before forwarding; existing API routes retain `/api/v1`, so the login URL is `/keybox/api/api/v1/auth/login`. Health is available at `/keybox/api/healthz`, and API documentation at `/keybox/api/docs`.
+
+Source is installed at `/opt/keybox`. Use both Compose files for every operation:
+
+```sh
+cd /opt/keybox
+sudo docker compose --project-directory deploy -f deploy/compose.yaml -f deploy/compose.host-caddy.yaml build api
+sudo docker compose --project-directory deploy -f deploy/compose.yaml -f deploy/compose.host-caddy.yaml up -d --wait api
+```
+
+The override disables the bundled Caddy container and assigns the API `172.30.0.10` on an internal `172.30.0.0/24` bridge. Confirm this subnet does not overlap existing networks before reusing the configuration elsewhere. No API host port is published. The existing host Caddy uses these directives inside its `maybing.top` site:
+
+```caddyfile
+redir /keybox/api /keybox/api/ 308
+handle_path /keybox/api/* {
+    reverse_proxy 172.30.0.10:8000
+}
+```
+
+Other domain responses belong in a separate `handle` block. Validate the complete Caddyfile before reloading it. The existing IP-based `/slackingoff/` site is retained. Host Caddy manages the Let's Encrypt certificate and renewal; Docker and Caddy are enabled at boot, and the API uses `unless-stopped` restart policy.
+
+Python dependencies are installed through `https://pypi.tuna.tsinghua.edu.cn/simple`. Tsinghua's Docker CE mirror distributes Docker installation packages, not Docker Hub images. The Python base was downloaded from the Docker Official Image at `public.ecr.aws/docker/library/python:3.12-slim` and tagged locally as `python:3.12-slim`. Its verified digest is `sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1`. The deployed API image `keybox/api:56f3615` has ID `sha256:da54c5c27e14e3259f15772eb75dd26a9491cb6ea7e3bf0d49741ae6d782cb49`; it includes the Tsinghua Dockerfile change on top of source commit `56f3615`.
+
+The initial sync account is `keybox`. Its generated password was transferred to a protected local file; server temporary plaintext files were removed. Set a new password interactively using the password-reset command below, adding `-f deploy/compose.host-caddy.yaml`. Use the same extra file for backup and restore commands. The verified initial backup is `/data/backups/initial-20261010.db` in the data volume; the independent restore drill used `/data/keybox-restore-drill.db` without selecting it as the live database. The backup currently contains an empty vault.
+
+## Standalone deployment with bundled Caddy
 
 1. Install Docker Engine and the Compose plugin on the Linux server. Set your domain's DNS records to the server and allow inbound TCP 80 and 443. Keep the API port private.
 2. From the repository root, copy `deploy/.env.example` to `deploy/.env` and replace `KEYBOX_DOMAIN` with your actual DNS name. There are no default accounts or passwords.

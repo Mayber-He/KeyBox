@@ -5,6 +5,36 @@ import 'package:http/testing.dart';
 import 'package:keybox/sync/api_client.dart';
 
 void main() {
+  test('HTTPS 子路径前缀保留在登录和同步请求中', () async {
+    for (final address in [
+      'https://maybing.top/keybox/api/',
+      'https://maybing.top/keybox/api',
+    ]) {
+      final paths = <String>[];
+      final client = ApiClient(
+        Uri.parse(address),
+        MemorySessionStorage(),
+        client: MockClient((request) async {
+          paths.add(request.url.path);
+          expect(request.url.host, 'maybing.top');
+          expect(request.followRedirects, isFalse);
+          return request.url.path.endsWith('/login')
+              ? http.Response(
+                  '{"access_token":"access","refresh_token":"refresh","device_id":"device"}',
+                  200,
+                )
+              : http.Response('{"metadata":null,"items":[]}', 200);
+        }),
+      );
+      await client.login('user', 'separate-sync-password');
+      await client.request('GET', '/vault');
+      expect(paths, [
+        '/keybox/api/api/v1/auth/login',
+        '/keybox/api/api/v1/vault',
+      ]);
+      client.close();
+    }
+  });
   test('串行刷新会话，不重试已消耗令牌，拒绝凭据重定向', () async {
     final storage = MemorySessionStorage();
     var refreshes = 0;
